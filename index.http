@@ -1,0 +1,51 @@
+### USER
+GET http://localhost:3333/user
+
+###
+POST http://localhost:3333/user
+Content-Type: application/json
+
+{
+    "name": "Bob",
+    "lastName": "Bobson",
+    "email": "bob@example.com"
+}
+
+###
+DELETE http://localhost:3333/user/MbAOhf76VRv5AR9BJXWhC
+
+###
+PATCH http://localhost:3333/user/64HKm16r78_mGnK8NJpNF
+Content-Type: application/json
+
+{
+    "email": "bob@example.com"
+}
+
+
+### ARTICLE
+GET http://localhost:3333/article
+
+###
+POST http://localhost:3333/article/64HKm16r78_mGnK8NJpNF
+Content-Type: application/json
+
+{
+    "name": "Water",
+    "price": 1
+}
+
+###
+GET http://localhost:3333/article/64HKm16r78_mGnK8NJpNF
+
+
+### URL
+POST http://localhost:3333/url/64HKm16r78_mGnK8NJpNF
+Content-Type: application/json
+
+{
+    "link": "http://example.com"
+}
+
+###
+GET http://localhost:3333/url/GoYcuz
