@@ -1,6 +1,9 @@
 const { model, Schema } = require('mongoose')
+const {
+  role: { ROLE_NAMES }
+} = require('../../../utils')
 
-const ArticleSchema = new Schema(
+const RoleSchema = new Schema(
   {
     id: {
       required: true,
@@ -9,11 +12,8 @@ const ArticleSchema = new Schema(
     },
     name: {
       required: true,
-      type: String
-    },
-    price: {
-      required: true,
-      type: Number
+      type: String,
+      enum: ROLE_NAMES
     }
   },
   {
@@ -27,6 +27,6 @@ const ArticleSchema = new Schema(
   }
 )
 
-const ArticleModel = model('articles', ArticleSchema)
+const RoleModel = model('roles', RoleSchema)
 
-module.exports = ArticleModel
+module.exports = RoleModel

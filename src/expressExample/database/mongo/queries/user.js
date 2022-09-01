@@ -1,4 +1,4 @@
-const { UserModel } = require("../models");
+const { UserModel } = require('../models')
 
 /**
  * @param {Object} user
@@ -6,44 +6,47 @@ const { UserModel } = require("../models");
  * @param {String} user.name
  * @param {String} user.lastName
  * @param {String} user.email
+ * @param {String} user.salt
+ * @param {String} user.hash
+ * @param {import('mongoose').Schema.Types.ObjectId} user.role
  * @returns saved user
  */
-const saveUser = async (user) => {
-  const savedUser = new UserModel(user);
+const saveUser = async user => {
+  const savedUser = new UserModel(user)
 
-  await savedUser.save();
+  await savedUser.save()
 
-  return savedUser;
-};
+  return savedUser
+}
 
 /**
  * @param {String} id
  * @returns found user
  */
-const getOneUser = async (id) => {
-  const users = await UserModel.find({ id }).populate("articleId");
+const getUserByID = async id => {
+  const users = await UserModel.find({ id }).populate('articleId')
 
-  return users[0];
-};
+  return users[0]
+}
 
 /**
  * @returns found users
  */
 const getAllUsers = async () => {
-  const users = await UserModel.find();
+  const users = await UserModel.find()
 
-  return users;
-};
+  return users
+}
 
 /**
  * @param {String} id
  * @returns found user
  */
-const removeOneUser = async (id) => {
-  const user = await UserModel.findOneAndRemove({ id });
+const removeUserByID = async id => {
+  const user = await UserModel.findOneAndRemove({ id })
 
-  return user;
-};
+  return user
+}
 
 /**
  * @param {Object} user
@@ -51,24 +54,39 @@ const removeOneUser = async (id) => {
  * @param {String|undefined} user.name
  * @param {String|undefined} user.lastName
  * @param {String|undefined} user.email
- * @param {ObjectId} user.articleId
+ * @param {String|undefined} user.salt
+ * @param {String|undefined} user.hash
+ * @param {import('mongoose').Schema.Types.ObjectId|undefined} user.articleId
  * @returns updated user
  */
-const updateOneUser = async (user) => {
-  const { id, name, lastName, email, articleId } = user;
+const updateOneUser = async user => {
+  const { id, name, lastName, email, salt, hash, articleId } = user
   const userUpdated = await UserModel.findOneAndUpdate(
     { id },
-    { name, lastName, email, articleId },
+    {
+      ...(name && { name }),
+      ...(lastName && { lastName }),
+      ...(email && { email }),
+      ...(articleId && { articleId }),
+      ...(salt && hash && { salt, hash })
+    },
     { new: true }
-  ).populate("articleId");
+  )
 
-  return userUpdated;
-};
+  return userUpdated
+}
+
+const getOneUser = async (query = {}) => {
+  const users = await UserModel.find(query)
+
+  return users[0]
+}
 
 module.exports = {
   saveUser,
-  getOneUser,
+  getUserByID,
   getAllUsers,
-  removeOneUser,
+  removeUserByID,
   updateOneUser,
-};
+  getOneUser
+}

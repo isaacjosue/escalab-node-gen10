@@ -6,18 +6,34 @@
   "scripts": {
     "service": "node -r dotenv/config src/index.js",
     "express": "nodemon -r dotenv/config src/expressExample/index.js",
-    "http": "nodemon -r dotenv/config src/httpExample/index.js"
+    "http": "nodemon -r dotenv/config src/httpExample/index.js",
+    "lint": "npx eslint --fix ./src/expressExample"
   },
   "author": "isaacjosue",
   "license": "ISC",
   "dependencies": {
+    "@sinclair/typebox": "^0.24.28",
+    "ajv": "^8.11.0",
+    "ajv-formats": "^2.1.1",
     "express": "^4.18.1",
+    "http-errors": "^2.0.0",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.5.2",
     "morgan": "^1.10.0",
     "nanoid": "^3.3.4"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^8.5.9",
     "dotenv": "^16.0.1",
-    "nodemon": "^2.0.19"
+    "eslint": "^8.22.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.5",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.0.1",
+    "nodemon": "^2.0.19",
+    "prettier": "^2.7.1"
   }
 }

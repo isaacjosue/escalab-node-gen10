@@ -1,4 +1,4 @@
-const { ArticleModel } = require("../models");
+const { ArticleModel } = require('../models')
 
 /**
  * @param {Object} article
@@ -7,42 +7,42 @@ const { ArticleModel } = require("../models");
  * @param {Number} article.price
  * @returns saved article
  */
-const saveArticle = async (article) => {
-  const savedArticle = new ArticleModel(article);
+const saveArticle = async article => {
+  const savedArticle = new ArticleModel(article)
 
-  await savedArticle.save();
+  await savedArticle.save()
 
-  return savedArticle;
-};
+  return savedArticle
+}
 
 /**
  * @param {String} id
  * @returns found article
  */
-const getOneArticle = async (id) => {
-  const articles = await ArticleModel.find({ id });
+const getOneArticle = async id => {
+  const articles = await ArticleModel.find({ id })
 
-  return articles[0];
-};
+  return articles[0]
+}
 
 /**
  * @returns found articles
  */
 const getAllArticles = async () => {
-  const articles = await ArticleModel.find();
+  const articles = await ArticleModel.find()
 
-  return articles;
-};
+  return articles
+}
 
 /**
  * @param {String} id
  * @returns found article
  */
-const removeOneArticle = async (id) => {
-  const article = await ArticleModel.findOneAndRemove({ id });
+const removeOneArticle = async id => {
+  const article = await ArticleModel.findOneAndRemove({ id })
 
-  return article;
-};
+  return article
+}
 
 /**
  * @param {Object} article
@@ -51,21 +51,21 @@ const removeOneArticle = async (id) => {
  * @param {Number|undefined} article.price
  * @returns updated article
  */
-const updateOneArticle = async (article) => {
-  const { id, name, price } = article;
+const updateOneArticle = async article => {
+  const { id, name, price } = article
   const articleUpdated = await ArticleModel.findOneAndUpdate(
     { id },
     { name, price },
     { new: true }
-  );
+  )
 
-  return articleUpdated;
-};
+  return articleUpdated
+}
 
 module.exports = {
   saveArticle,
   getOneArticle,
   getAllArticles,
   removeOneArticle,
-  updateOneArticle,
-};
+  updateOneArticle
+}

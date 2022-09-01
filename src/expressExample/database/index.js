@@ -1,3 +1,3 @@
 module.exports = {
-    mongo: require("./mongo")
+  mongo: require('./mongo')
 }

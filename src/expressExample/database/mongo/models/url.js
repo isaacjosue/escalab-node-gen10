@@ -1,33 +1,33 @@
-const { model, Schema } = require("mongoose");
+const { model, Schema } = require('mongoose')
 
 const UrlSchema = new Schema(
   {
     id: {
       required: true,
       type: String,
-      unique: true,
+      unique: true
     },
     link: {
       required: true,
-      type: String,
+      type: String
     },
     userId: {
       required: true,
       type: Schema.Types.ObjectId,
-      ref: "users",
-    },
+      ref: 'users'
+    }
   },
   {
     timestamps: true,
     versionKey: false,
     toObject: {
       transform: (_, ret) => {
-        delete ret._id;
-      },
-    },
+        delete ret._id
+      }
+    }
   }
-);
+)
 
-const UrlModel = model("urls", UrlSchema);
+const UrlModel = model('urls', UrlSchema)
 
-module.exports = UrlModel;
+module.exports = UrlModel

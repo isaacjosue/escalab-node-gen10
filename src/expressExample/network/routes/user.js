@@ -1,101 +1,145 @@
-const { Router } = require("express");
-const { nanoid } = require("nanoid");
+const { Router } = require('express')
+const jwt = require('jsonwebtoken')
 
 const {
-  mongo: { queries },
-} = require("../../database");
-const response = require("./response");
+  user: { storeUserSchema, updateUserSchema, userIDSchema, userLoginSchema }
+} = require('../../schemas')
+const { validatorCompiler, validateAuthorization } = require('./utils')
+const response = require('./response')
+const { UserService } = require('../../services')
 
-const UserRouter = Router();
-const {
-  user: { getAllUsers, saveUser, removeOneUser, updateOneUser, getOneUser },
-} = queries;
+const UserRouter = Router()
 
-UserRouter.route("/user")
-  .get(async (req, res) => {
+UserRouter.route('/user').get(validateAuthorization, async (req, res, next) => {
+  try {
+    const userService = new UserService()
+
+    response({
+      error: false,
+      message: await userService.getAllUsers(),
+      res,
+      status: 200
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+UserRouter.route('/user/signup').post(
+  validatorCompiler(storeUserSchema, 'body'),
+  async (req, res, next) => {
     try {
-      const users = await getAllUsers();
+      const {
+        body: { name, lastName, email, password }
+      } = req
 
-      response({ error: false, message: users, res, status: 200 });
+      response({
+        error: false,
+        message: await new UserService({
+          name,
+          lastName,
+          email,
+          password
+        }).saveUser(),
+        res,
+        status: 201
+      })
     } catch (error) {
-      console.log(error);
-      response({ message: "Internal server error", res });
+      next(error)
+    }
+  }
+)
+
+UserRouter.route('/user/login').post(
+  validatorCompiler(userLoginSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const {
+        body: { email, password }
+      } = req
+
+      const payload = { email, password }
+      const token = jwt.sign(payload, process.env.SECRET, {
+        expiresIn: '2min'
+      })
+
+      console.log('token', token)
+
+      response({
+        error: false,
+        message: await new UserService({
+          email,
+          password
+        }).login(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+)
+
+UserRouter.route('/user/:id')
+  .get(validatorCompiler(userIDSchema, 'params'), async (req, res, next) => {
+    try {
+      const {
+        params: { id: userId }
+      } = req
+      const userService = new UserService({ userId })
+
+      response({
+        error: false,
+        message: await userService.getUserByID(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
     }
   })
-  .post(async (req, res) => {
+  .delete(validatorCompiler(userIDSchema, 'params'), async (req, res, next) => {
     try {
+      const {
+        params: { id }
+      } = req
+      const userService = new UserService({ userId: id })
+
+      response({
+        error: false,
+        message: await userService.removeUserByID(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+  .patch(
+    validatorCompiler(userIDSchema, 'params'),
+    validatorCompiler(updateUserSchema, 'body'),
+    async (req, res, next) => {
       const {
         body: { name, lastName, email },
-      } = req;
+        params: { id: userId }
+      } = req
 
-      await saveUser({
-        id: nanoid(),
-        name,
-        lastName,
-        email
-      });
-      response({
-        error: false,
-        message: await getAllUsers(),
-        res,
-        status: 201,
-      });
-    } catch (error) {
-      console.log(error);
-      response({ message: "Internal server error", res });
+      try {
+        response({
+          error: false,
+          message: await new UserService({
+            userId,
+            name,
+            lastName,
+            email
+          }).updateOneUser(),
+          res,
+          status: 200
+        })
+      } catch (error) {
+        next(error)
+      }
     }
-  });
+  )
 
-UserRouter.route("/user/:id")
-  .get(async (req, res) => {
-    try {
-      const {
-        params: { id },
-      } = req;
-      const user = await getOneUser(id);
-
-      response({ error: false, message: user, res, status: 200 });
-    } catch (error) {
-      console.log(error);
-      response({ message: "Internal server error", res });
-    }
-  })
-  .delete(async (req, res) => {
-    try {
-      const {
-        params: { id },
-      } = req;
-      await removeOneUser(id);
-
-      response({
-        error: false,
-        message: await getAllUsers(),
-        res,
-        status: 200,
-      });
-    } catch (error) {
-      console.log(error);
-      response({ message: "Internal server error", res });
-    }
-  })
-  .patch(async (req, res) => {
-    const {
-      body: { name, lastName, email },
-      params: { id },
-    } = req;
-
-    try {
-      await updateOneUser({ id, name, lastName, email });
-      response({
-        error: false,
-        message: await getAllUsers(),
-        res,
-        status: 200,
-      });
-    } catch (error) {
-      console.log(error);
-      response({ message: "Internal server error", res });
-    }
-  });
-
-module.exports = UserRouter;
+module.exports = UserRouter
