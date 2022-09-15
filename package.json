@@ -8,12 +8,12 @@
     "express": "nodemon -r dotenv/config src/expressExample/index.js",
     "http": "nodemon -r dotenv/config src/httpExample/index.js",
     "lint": "npx eslint --fix ./src/expressExample",
-    "test:ci": "set NODE_ENV=ci && jest --ci -i",
-    "test:unit:ci": "set NODE_ENV=ci && jest --ci -i --testPathPattern=test/unit",
-    "test:e2e:ci": "set NODE_ENV=ci && jest --ci -i --testPathPattern=test/e2e",
-    "test:local": "set NODE_ENV:local && jest -i",
+    "test:ci": "set NODE_ENV=ci&& jest --ci -i",
+    "test:unit:ci": "set NODE_ENV=ci&& jest --ci -i --testPathPattern=test/unit",
+    "test:e2e:ci": "set NODE_ENV=ci&& jest --ci -i --testPathPattern=test/e2e",
+    "test:local": "set NODE_ENV=local&& jest -i",
     "test:unit:local": "jest -i --testPathPattern=test/unit",
-    "test:e2e:local": "set NODE_ENV=local && jest --testPathPattern=test/e2e"
+    "test:e2e:local": "set NODE_ENV=local&& jest --testPathPattern=test/e2e"
   },
   "author": "isaacjosue",
   "license": "ISC",
