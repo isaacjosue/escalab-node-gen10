@@ -1,6 +1,6 @@
 module.exports = {
   UrlService: require('./url'),
-  ArticleService: require('./article'),
+  // ArticleService: require('./article'),
   UserService: require('./user'),
   RoleService: require('./role')
 }

@@ -5,6 +5,7 @@ const {
   urlRouter,
   articleRouter,
   roleRouter,
+  homeRouter,
   response
 } = require('./routes')
 const routers = [userRouter, urlRouter, articleRouter, roleRouter]
@@ -13,6 +14,7 @@ const routers = [userRouter, urlRouter, articleRouter, roleRouter]
  * @param {import('express').Express} app
  */
 const applyRoutes = app => {
+  app.use('/', homeRouter)
   routers.forEach(router => app.use('/api', router))
 
   // Handling 404 error

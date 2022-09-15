@@ -56,6 +56,7 @@ const removeUserByID = async id => {
  * @param {String|undefined} user.email
  * @param {String|undefined} user.salt
  * @param {String|undefined} user.hash
+ * @param {import('mongoose').Schema.Types.ObjectId} user.role
  * @param {import('mongoose').Schema.Types.ObjectId|undefined} user.articleId
  * @returns updated user
  */

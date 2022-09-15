@@ -1,16 +1,16 @@
 const { Router } = require('express')
-const jwt = require('jsonwebtoken')
+const httpErrors = require('http-errors')
 
 const {
   user: { storeUserSchema, updateUserSchema, userIDSchema, userLoginSchema }
 } = require('../../schemas')
-const { validatorCompiler, validateAuthorization } = require('./utils')
+const { validatorCompiler, auth } = require('./utils')
 const response = require('./response')
 const { UserService } = require('../../services')
 
 const UserRouter = Router()
 
-UserRouter.route('/user').get(validateAuthorization, async (req, res, next) => {
+UserRouter.route('/user').get(auth.verifyUser(), async (req, res, next) => {
   try {
     const userService = new UserService()
 
@@ -52,28 +52,28 @@ UserRouter.route('/user/signup').post(
 
 UserRouter.route('/user/login').post(
   validatorCompiler(userLoginSchema, 'body'),
+  auth.generateTokens(),
   async (req, res, next) => {
     try {
       const {
+        accessToken,
+        refreshToken,
         body: { email, password }
       } = req
+      const isLoginCorrect = await new UserService({ email, password }).login()
 
-      const payload = { email, password }
-      const token = jwt.sign(payload, process.env.SECRET, {
-        expiresIn: '2min'
-      })
+      if (isLoginCorrect)
+        return response({
+          error: false,
+          message: {
+            accessToken,
+            refreshToken
+          },
+          res,
+          status: 200
+        })
 
-      console.log('token', token)
-
-      response({
-        error: false,
-        message: await new UserService({
-          email,
-          password
-        }).login(),
-        res,
-        status: 200
-      })
+      throw new httpErrors.Unauthorized('You are not registered')
     } catch (error) {
       next(error)
     }
@@ -81,43 +81,52 @@ UserRouter.route('/user/login').post(
 )
 
 UserRouter.route('/user/:id')
-  .get(validatorCompiler(userIDSchema, 'params'), async (req, res, next) => {
-    try {
-      const {
-        params: { id: userId }
-      } = req
-      const userService = new UserService({ userId })
+  .get(
+    validatorCompiler(userIDSchema, 'params'),
+    auth.verifyIsCurrentUser(),
+    async (req, res, next) => {
+      try {
+        const {
+          params: { id: userId }
+        } = req
+        const userService = new UserService({ userId })
 
-      response({
-        error: false,
-        message: await userService.getUserByID(),
-        res,
-        status: 200
-      })
-    } catch (error) {
-      next(error)
+        response({
+          error: false,
+          message: await userService.getUserByID(),
+          res,
+          status: 200
+        })
+      } catch (error) {
+        next(error)
+      }
     }
-  })
-  .delete(validatorCompiler(userIDSchema, 'params'), async (req, res, next) => {
-    try {
-      const {
-        params: { id }
-      } = req
-      const userService = new UserService({ userId: id })
+  )
+  .delete(
+    validatorCompiler(userIDSchema, 'params'),
+    auth.verifyIsCurrentUser(),
+    async (req, res, next) => {
+      try {
+        const {
+          params: { id }
+        } = req
+        const userService = new UserService({ userId: id })
 
-      response({
-        error: false,
-        message: await userService.removeUserByID(),
-        res,
-        status: 200
-      })
-    } catch (error) {
-      next(error)
+        response({
+          error: false,
+          message: await userService.removeUserByID(),
+          res,
+          status: 200
+        })
+      } catch (error) {
+        next(error)
+      }
     }
-  })
+  )
   .patch(
     validatorCompiler(userIDSchema, 'params'),
     validatorCompiler(updateUserSchema, 'body'),
+    auth.verifyIsCurrentUser(),
     async (req, res, next) => {
       const {
         body: { name, lastName, email },
@@ -142,4 +151,26 @@ UserRouter.route('/user/:id')
     }
   )
 
+UserRouter.route('/user/refreshAccessToken/:id').get(
+  validatorCompiler(userIDSchema, 'params'),
+  auth.verifyIsCurrentUser(),
+  auth.refreshAccessToken(),
+  async (req, res, next) => {
+    try {
+      const { accessToken, refreshToken } = req
+
+      response({
+        error: false,
+        message: {
+          accessToken,
+          refreshToken
+        },
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+)
 module.exports = UserRouter

@@ -1,12 +1,12 @@
 const httpErrors = require('http-errors')
-const nanoid = require('nanoid')
+const { nanoid } = require('nanoid')
+
+const RoleService = require('./role')
 
 const {
   mongo: { queries }
 } = require('../database')
-const {
-  hash: { hashString }
-} = require('../utils')
+const { hash: hashString } = require('../utils')
 const {
   user: {
     getUserByID,
@@ -24,6 +24,7 @@ class UserService {
   #lastName
   #email
   #password
+  #role
   #articleId
 
   /**
@@ -33,15 +34,17 @@ class UserService {
    * @param {String} args.lastName
    * @param {String} args.email
    * @param {String} args.password
+   * @param {String} args.role
    * @param {import("mongoose").ObjectId} args.articleId
    */
-  constructor(args) {
+  constructor(args = {}) {
     const {
       userId = '',
       name = '',
       lastName = '',
       email = '',
       password = '',
+      role = '2',
       articleId = ''
     } = args
 
@@ -50,6 +53,7 @@ class UserService {
     this.#lastName = lastName
     this.#email = email
     this.#password = password
+    this.#role = role
     this.#articleId = articleId
   }
 
@@ -77,7 +81,11 @@ class UserService {
     if (!this.#password)
       throw new httpErrors.BadRequest('Missing required field: password')
 
+    if (!this.#role)
+      throw new httpErrors.BadRequest('Missing required field: role')
+
     const { salt, result: hash } = hashString(this.#password)
+    const role = await new RoleService({ id: this.#role }).getRoleByID()
 
     await saveUser({
       id: nanoid(),
@@ -85,7 +93,8 @@ class UserService {
       lastName: this.#lastName,
       email: this.#email,
       salt,
-      hash
+      hash,
+      role: role._id
     })
 
     return await getAllUsers()
@@ -157,9 +166,10 @@ class UserService {
     const { salt, hash } = user
     const { result } = hashString(this.#password, salt)
 
+    console.log(hash, result)
     if (hash !== result) throw new httpErrors.BadRequest('Bad credentials')
 
-    return true
+    return user
   }
 }
 
