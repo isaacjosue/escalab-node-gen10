@@ -4,7 +4,7 @@ on: push
 
 jobs:
   unit-test:
-    environment: Test
+    environment: Testing
     name: E2E test for my API
     runs-on: ubuntu-latest
 
