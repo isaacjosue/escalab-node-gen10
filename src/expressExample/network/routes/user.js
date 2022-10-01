@@ -60,12 +60,13 @@ UserRouter.route('/user/login').post(
         refreshToken,
         body: { email, password }
       } = req
-      const isLoginCorrect = await new UserService({ email, password }).login()
+      const user = await new UserService({ email, password }).login()
 
-      if (isLoginCorrect)
+      if (user)
         return response({
           error: false,
           message: {
+            id: user.id,
             accessToken,
             refreshToken
           },
@@ -173,4 +174,30 @@ UserRouter.route('/user/refreshAccessToken/:id').get(
     }
   }
 )
+
+UserRouter.route('/user/funds/:id').post(
+  validatorCompiler(userIDSchema, 'params'),
+  auth.verifyIsCurrentUser(),
+  async (req, res, next) => {
+    try {
+      const {
+        body: { funds: balance },
+        params: { id: userId }
+      } = req
+
+      response({
+        error: false,
+        message: await new UserService({
+          userId,
+          balance
+        }).addToBalance(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+)
+
 module.exports = UserRouter

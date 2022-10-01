@@ -4,8 +4,12 @@ const ROLES = {
     description: 'system admin'
   },
   2: {
-    name: 'user',
-    description: 'user who can sell and buy articles'
+    name: 'buyer',
+    description: 'user who can buy articles'
+  },
+  3: {
+    name: 'seller',
+    description: 'user who can sell articles'
   }
 }
 

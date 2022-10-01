@@ -1,129 +1,155 @@
 const { Router } = require('express')
-const { nanoid } = require('nanoid')
 
-const { ArticleService } = require('../../services')
 const {
-  mongo: { queries }
-} = require('../../database')
+  user: { userIDSchema },
+  article: { storeArticleSchema, updateArticleSchema }
+} = require('../../schemas')
+const { validatorCompiler, auth } = require('./utils')
 const response = require('./response')
+const { ArticleService } = require('../../services')
 
 const ArticleRouter = Router()
-const {
-  article: { getAllArticles, removeOneArticle, updateOneArticle, getOneArticle }
-} = queries
 
-// GET /article
-ArticleRouter.route('/article').get(async (req, res) => {
-  try {
-    const articles = await getAllArticles()
+ArticleRouter.route('/article').get(
+  auth.verifyUser(),
+  async (req, res, next) => {
+    try {
+      const articleService = new ArticleService()
 
-    response({ error: false, message: articles, res, status: 200 })
-  } catch (error) {
-    console.log(error)
-    response({ message: 'Internal server error', res })
+      return response({
+        error: false,
+        message: await articleService.getAllArticles(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
+    }
   }
-})
+)
 
-ArticleRouter.route('/article/:userId')
-  // GET /article/:userId
-  .get(async (req, res) => {
-    const {
-      params: { userId }
-    } = req
-
-    try {
-      const articleService = new ArticleService({ userId })
-      const article = await articleService.getArticle()
-
-      response({
-        error: false,
-        message: article,
-        res,
-        status: 200
-      })
-    } catch (error) {
-      console.log(error)
-      response({ message: 'Internal server error', res })
-    }
-  })
-  // POST /article/:userId
-  .post(async (req, res) => {
-    const {
-      params: { userId },
-      body: { name, price }
-    } = req
-
-    try {
-      const articleService = new ArticleService({
-        id: nanoid(),
-        name,
-        price,
-        userId
-      })
-      await articleService.saveArticle()
-
-      response({
-        error: false,
-        message: await getAllArticles(),
-        res,
-        status: 201
-      })
-    } catch (error) {
-      console.log(error)
-      response({ message: 'Internal server error', res })
-    }
-  })
-
-ArticleRouter.route('/article/:id')
-  .get(async (req, res) => {
+ArticleRouter.route('/article/create').post(
+  validatorCompiler(storeArticleSchema, 'body'),
+  auth.verifyIsCurrentUser('body'),
+  async (req, res, next) => {
     try {
       const {
-        params: { id }
+        body: { id: userId, name, price }
       } = req
-      const article = await getOneArticle(id)
 
-      response({ error: false, message: article, res, status: 200 })
-    } catch (error) {
-      console.log(error)
-      response({ message: 'Internal server error', res })
-    }
-  })
-  .delete(async (req, res) => {
-    try {
-      const {
-        params: { id }
-      } = req
-      await removeOneArticle(id)
-
-      response({
+      return response({
         error: false,
-        message: await getAllArticles(),
-        res,
-        status: 200
+        message: await new ArticleService({
+          name,
+          price,
+          userId
+        }).saveArticle(),
+        status: 201,
+        res
       })
     } catch (error) {
-      console.log(error)
-      response({ message: 'Internal server error', res })
+      next(error)
     }
-  })
-  .patch(async (req, res) => {
+  }
+)
+
+ArticleRouter.route('/article/owner/:id').get(
+  validatorCompiler(userIDSchema, 'params'),
+  auth.verifyUser(),
+  async (req, res, next) => {
     const {
-      body: { name, lastName, email },
-      params: { id }
+      params: { id: userId }
     } = req
 
     try {
-      await updateOneArticle({ id, name, lastName, email })
-      response({
+      return response({
         error: false,
-        message: await getAllArticles(),
+        message: await new ArticleService({ userId }).getArticlesByUser(),
         res,
         status: 200
       })
     } catch (error) {
-      console.log(error)
-      response({ message: 'Internal server error', res })
+      next(error)
+    }
+  }
+)
+
+ArticleRouter.route('/article/:articleId')
+  .get(auth.verifyUser(), async (req, res, next) => {
+    try {
+      const {
+        params: { articleId }
+      } = req
+
+      return response({
+        error: false,
+        message: new ArticleService({ articleId }).getArticleById(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
     }
   })
+  .post(auth.verifyIsCurrentUser('body'), async (req, res, next) => {
+    try {
+      const {
+        body: { id: userId },
+        params: { articleId }
+      } = req
+
+      return response({
+        error: false,
+        message: await new ArticleService({ userId, articleId }).buyArticle(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+  .delete(auth.verifyUser(), async (req, res, next) => {
+    try {
+      const {
+        params: { articleId }
+      } = req
+
+      return response({
+        error: false,
+        message: await new ArticleService({ articleId }).removeArticleByID(),
+        res,
+        status: 200
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+  .patch(
+    validatorCompiler(updateArticleSchema, 'body'),
+    auth.verifyUser(),
+    async (req, res, next) => {
+      const {
+        body: { name, price },
+        params: { articleId }
+      } = req
+
+      try {
+        const articleService = new ArticleService({
+          articleId,
+          name,
+          price
+        })
+
+        return response({
+          error: false,
+          message: await articleService.updateOneArticle(),
+          res,
+          status: 200
+        })
+      } catch (error) {
+        next(error)
+      }
+    }
+  )
 
 module.exports = ArticleRouter

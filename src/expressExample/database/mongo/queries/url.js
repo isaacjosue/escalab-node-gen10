@@ -1,4 +1,5 @@
 const { UrlModel } = require('../models')
+const filter = require('./filter')
 
 /**
  * @param {String} id
@@ -18,7 +19,7 @@ const saveUrl = async url => {
  * @returns found url
  */
 const getOneUrl = async id => {
-  const urls = await UrlModel.find({ id }).populate('userId')
+  const urls = await UrlModel.find(filter(id)).populate('userId')
 
   return urls[0]
 }

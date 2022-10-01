@@ -14,6 +14,11 @@ const ArticleSchema = new Schema(
     price: {
       required: true,
       type: Number
+    },
+    userId: {
+      required: true,
+      type: Schema.Types.ObjectId,
+      ref: 'users'
     }
   },
   {

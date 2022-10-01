@@ -1,4 +1,5 @@
 const { UserModel } = require('../models')
+const filter = require('./filter')
 
 /**
  * @param {Object} user
@@ -8,6 +9,7 @@ const { UserModel } = require('../models')
  * @param {String} user.email
  * @param {String} user.salt
  * @param {String} user.hash
+ * @param {Number} user.balance
  * @param {import('mongoose').Schema.Types.ObjectId} user.role
  * @returns saved user
  */
@@ -24,7 +26,7 @@ const saveUser = async user => {
  * @returns found user
  */
 const getUserByID = async id => {
-  const users = await UserModel.find({ id }).populate('articleId')
+  const users = await UserModel.find(filter(id))
 
   return users[0]
 }
@@ -43,7 +45,7 @@ const getAllUsers = async () => {
  * @returns found user
  */
 const removeUserByID = async id => {
-  const user = await UserModel.findOneAndRemove({ id })
+  const user = await UserModel.findOneAndRemove(filter(id))
 
   return user
 }
@@ -56,20 +58,20 @@ const removeUserByID = async id => {
  * @param {String|undefined} user.email
  * @param {String|undefined} user.salt
  * @param {String|undefined} user.hash
+ * @param {Number|undefined} user.balance
  * @param {import('mongoose').Schema.Types.ObjectId} user.role
- * @param {import('mongoose').Schema.Types.ObjectId|undefined} user.articleId
  * @returns updated user
  */
 const updateOneUser = async user => {
-  const { id, name, lastName, email, salt, hash, articleId } = user
+  const { id, name, lastName, email, salt, hash, balance } = user
   const userUpdated = await UserModel.findOneAndUpdate(
-    { id },
+    filter(id),
     {
       ...(name && { name }),
       ...(lastName && { lastName }),
       ...(email && { email }),
-      ...(articleId && { articleId }),
-      ...(salt && hash && { salt, hash })
+      ...(salt && hash && { salt, hash }),
+      ...(balance && { balance })
     },
     { new: true }
   )

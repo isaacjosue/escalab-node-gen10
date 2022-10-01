@@ -3,7 +3,7 @@ const { Router } = require('express')
 const {
   role: { storeRoleSchema }
 } = require('../../schemas')
-const { validatorCompiler } = require('./utils')
+const { validatorCompiler, auth } = require('./utils')
 const response = require('./response')
 const { RoleService } = require('../../services')
 
@@ -11,6 +11,7 @@ const RoleRouter = Router()
 
 RoleRouter.route('/role').post(
   validatorCompiler(storeRoleSchema, 'body'),
+  auth.verifyUser(),
   async (req, res, next) => {
     const {
       body: { id, name }
@@ -31,7 +32,7 @@ RoleRouter.route('/role').post(
   }
 )
 
-RoleRouter.route('/role/:id').get(async (req, res, next) => {
+RoleRouter.route('/role/:id').get(auth.verifyUser(), async (req, res, next) => {
   const {
     params: { id }
   } = req

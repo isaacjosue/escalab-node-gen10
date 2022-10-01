@@ -1,74 +1,154 @@
+const httpErrors = require('http-errors')
+const { nanoid } = require('nanoid')
+
 const UserService = require('./user')
+
 const {
   mongo: { queries }
 } = require('../database')
-const { nanoid } = require('nanoid')
 const {
-  article: { getOneArticle, saveArticle },
-  user: { getOneUser, updateOneUser }
+  article: {
+    saveArticle,
+    getArticleByID,
+    getAllArticles,
+    removeArticleByID,
+    updateOneArticle
+  }
 } = queries
 
 class ArticleService {
-  #id
+  #articleId
   #name
   #price
   #userId
 
   /**
-   * @param {String|undefined} id
-   * @param {String|undefined} name
-   * @param {Number|undefined} price
-   * @param {String|undefined} userId
+   * @param {Object} args
+   * @param {String} args.articleId
+   * @param {String} args.name
+   * @param {Number} args.price
+   * @param {import("mongoose").Schema.Types.ObjectId} args.userId
    */
-  constructor(args) {
-    const { id = '', name = '', price = 0, userId = '' } = args
+  constructor(args = {}) {
+    const { articleId = '', name = '', price = 1, userId = '' } = args
 
-    this.#id = id
+    this.#articleId = articleId
     this.#name = name
     this.#price = price
     this.#userId = userId
   }
 
   async verifyArticleExists() {
-    if (!this.#id) throw new Error('Missing required field: id')
+    if (!this.#articleId)
+      throw new httpErrors.BadRequest('Missing required field: articleId')
 
-    const article = await getOneArticle(this.#id)
+    const article = await getArticleByID(this.#articleId)
 
-    if (!article) throw new Error('Article not found')
+    if (!article) throw new httpErrors.NotFound('Article not found')
 
     return article
   }
 
-  async getArticle() {
-    if (!this.#userId) throw new Error('Missing required field: userId')
-
-    const user = await getOneUser(this.#userId)
-
-    if (!user) throw new Error('User does not exist')
-
-    return user.articleId || []
-  }
-
   async saveArticle() {
-    if (!this.#userId) throw new Error('Missing required field: userId')
+    if (!this.#userId)
+      throw new httpErrors.BadRequest('Missing required field: userId')
 
-    const userService = new UserService(this.#userId)
+    const user = await new UserService({
+      userId: this.#userId
+    }).verifyUserExists()
 
-    if (!(await userService.verifyUserExists()))
-      throw new Error('User does not exist')
-
-    const newArticle = await saveArticle({
+    return await saveArticle({
       id: nanoid(),
       name: this.#name,
-      price: this.#price
+      price: this.#price,
+      userId: user._id
     })
+  }
 
-    await updateOneUser({
-      id: this.#userId,
-      articleId: newArticle._id
+  async getArticleById() {
+    if (!this.#articleId)
+      throw new httpErrors.BadRequest('Missing required field: articleId')
+
+    const article = await getArticleByID(this.#articleId)
+
+    if (!article) throw new httpErrors.NotFound('Article does not exist')
+
+    return article.articleId
+  }
+
+  async getAllArticles() {
+    return await getAllArticles()
+  }
+
+  async removeArticleByID() {
+    if (!this.#articleId)
+      throw new httpErrors.BadRequest('Missing required field: articleId')
+
+    const article = await removeArticleByID(this.#articleId)
+
+    if (!article)
+      throw new httpErrors.NotFound('The requested article does not exist')
+
+    return article
+  }
+
+  async updateOneArticle() {
+    if (!this.#articleId)
+      throw new httpErrors.BadRequest('Missing required field: articleId')
+
+    return await updateOneArticle({
+      id: this.#articleId,
+      name: this.#name,
+      price: this.#price,
+      userId: this.#userId
     })
+  }
 
-    return newArticle.toObject()
+  async buyArticle() {
+    if (!this.#articleId)
+      throw new httpErrors.BadRequest('Missing required field: articleId')
+    if (!this.#userId)
+      throw new httpErrors.BadRequest('Missing required field: userId')
+
+    const article = await getArticleByID(this.#articleId)
+    if (!article)
+      throw new httpErrors.NotFound('The requested article does not exist')
+
+    const sellerService = new UserService({
+      userId: article.userId,
+      balance: article.price
+    })
+    await sellerService.verifyUserExists()
+
+    const buyerService = new UserService({
+      userId: this.#userId,
+      balance: article.price
+    })
+    const buyer = await buyerService.verifyUserExists()
+
+    await buyerService.removeFromBalance()
+    await sellerService.addToBalance()
+
+    return await updateOneArticle({
+      id: this.#articleId,
+      userId: buyer._id
+    })
+  }
+
+  async getArticlesByUser() {
+    if (!this.#userId)
+      throw new httpErrors.BadRequest('Missing required field: userId')
+
+    const userService = new UserService({ userId: this.#userId })
+    const user = await userService.verifyUserExists()
+
+    const articles = await getAllArticles()
+
+    const articlesFiltered = articles.filter(
+      article => article.userId.toString() === user._id.toString()
+    )
+
+    return articlesFiltered
   }
 }
 

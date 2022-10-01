@@ -25,7 +25,7 @@ class UserService {
   #email
   #password
   #role
-  #articleId
+  #balance
 
   /**
    * @param {Object} args
@@ -35,7 +35,7 @@ class UserService {
    * @param {String} args.email
    * @param {String} args.password
    * @param {String} args.role
-   * @param {import("mongoose").ObjectId} args.articleId
+   * @param {Number} args.balance
    */
   constructor(args = {}) {
     const {
@@ -45,7 +45,7 @@ class UserService {
       email = '',
       password = '',
       role = '2',
-      articleId = ''
+      balance = 0
     } = args
 
     this.#userId = userId
@@ -54,7 +54,7 @@ class UserService {
     this.#email = email
     this.#password = password
     this.#role = role
-    this.#articleId = articleId
+    this.#balance = balance
   }
 
   async verifyUserExists() {
@@ -94,6 +94,7 @@ class UserService {
       email: this.#email,
       salt,
       hash,
+      balance: this.#balance,
       role: role._id
     })
 
@@ -107,7 +108,7 @@ class UserService {
     const user = await getUserByID(this.#userId)
 
     if (!user)
-      throw new httpErrors.NotFound('The requested user does not exists')
+      throw new httpErrors.NotFound('The requested user does not exist')
 
     return user
   }
@@ -123,7 +124,7 @@ class UserService {
     const user = await removeUserByID(this.#userId)
 
     if (!user)
-      throw new httpErrors.NotFound('The requested user does not exists')
+      throw new httpErrors.NotFound('The requested user does not exist')
 
     return user
   }
@@ -147,8 +148,7 @@ class UserService {
       name: this.#name,
       lastName: this.#lastName,
       email: this.#email,
-      ...aux,
-      articleId: this.#articleId
+      ...aux
     })
   }
 
@@ -166,10 +166,49 @@ class UserService {
     const { salt, hash } = user
     const { result } = hashString(this.#password, salt)
 
-    console.log(hash, result)
     if (hash !== result) throw new httpErrors.BadRequest('Bad credentials')
 
     return user
+  }
+
+  async addToBalance() {
+    if (!this.#userId)
+      throw new httpErrors.BadRequest('Missing required field: userId')
+    if (!this.#balance)
+      throw new httpErrors.BadRequest('Missing required field: balance')
+
+    const user = await getUserByID(this.#userId)
+
+    if (!user)
+      throw new httpErrors.NotFound('The requested user does not exist')
+
+    const balance = user.balance + this.#balance
+
+    return await updateOneUser({
+      id: this.#userId,
+      balance
+    })
+  }
+
+  async removeFromBalance() {
+    if (!this.#userId)
+      throw new httpErrors.BadRequest('Missing required field: userId')
+    if (!this.#balance)
+      throw new httpErrors.BadRequest('Missing required field: balance')
+
+    const user = await getUserByID(this.#userId)
+
+    if (!user)
+      throw new httpErrors.NotFound('The requested user does not exist')
+
+    const balance = user.balance - this.#balance
+
+    if (balance < 0) throw new httpErrors.BadRequest('Insufficient funds')
+
+    return await updateOneUser({
+      id: this.#userId,
+      balance
+    })
   }
 }
 

@@ -32,10 +32,9 @@ const UserSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'roles'
     },
-    articleId: {
-      required: false,
-      type: Schema.Types.ObjectId,
-      ref: 'articles'
+    balance: {
+      required: true,
+      type: Number
     }
   },
   {

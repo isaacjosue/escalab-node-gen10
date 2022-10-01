@@ -90,11 +90,15 @@ const verifyUser = () => {
   }
 }
 
-const verifyIsCurrentUser = () => {
+/**
+ * @param {'params' | 'body'} value
+ * @param {'id' | 'userId'} location
+ */
+const verifyIsCurrentUser = (value = 'params', location = 'id') => {
   return async (req, res, next) => {
     try {
       const {
-        params: { id: userId },
+        [value]: { [location]: userId },
         headers: { authorization }
       } = req
       const token = getToken(authorization)

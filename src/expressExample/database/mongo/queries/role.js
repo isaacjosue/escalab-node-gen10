@@ -1,4 +1,5 @@
 const { RoleModel } = require('../models')
+const filter = require('./filter')
 
 /**
  * It takes a role object, creates a new RoleModel instance, saves it, and returns
@@ -22,7 +23,7 @@ const saveRole = async role => {
  * @returns The first role in the array of roles.
  */
 const getRoleByID = async id => {
-  const roles = await RoleModel.find({ id })
+  const roles = await RoleModel.find(filter(id))
 
   return roles[0]
 }
